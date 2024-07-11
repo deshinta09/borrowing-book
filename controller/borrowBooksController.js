@@ -72,18 +72,24 @@ class BorrowBooksController {
         };
       }
       // check waktu peminjaman apakah lebih dari 7 hari
-      // let check = membersBook.createdAt
+      let dateBorrowed = new Date(membersBook.createdAt.split(" ")[0]);
+      dateBorrowed = dateBorrowed.getDate();
+      let dateNow = new Date();
+      dateNow = dateNow.getDate();
+      // mengupdate jumlah buku
       let returnBook = await Books.update(
         { stock: book + 1 },
         { where: { id: BookId } }
       );
 
       if (returnBook[0] === 1) {
+        // status disesuaikan dengan aturan pinalti
+        let status = dateNow - dateBorrowed > 7 ? "penalized" : "returned";
         await MembersBook.update(
-          { status: "returned" },
+          { status },
           { where: { BookId, MemberId: req.user.id } }
         );
-        res.status(200).json(`Successfully returned the book ${book.title}`);
+        res.status(200).json(`${book.title} in status ${status}!`);
       } else {
         res.status(500).json({ message: "Internal Server Error" });
       }
