@@ -11,8 +11,8 @@ class MembersController {
         throw { name: "Bad Request", message: "Invalid email/password" };
       }
 
-      let checkPassword = checkPassword(password, user.password);
-      if (!checkPassword) {
+      let check = checkPassword(password, user.password);
+      if (!check) {
         throw { name: "Bad Request", message: "Invalid email/password" };
       }
 
