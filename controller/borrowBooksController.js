@@ -10,6 +10,20 @@ class BorrowBooksController {
       next(error);
     }
   }
+
+  static async postBorrowBooks(req, res, next) {
+    try {
+      let { BookId } = req.params;
+      let addBook = await MembersBook.create({
+        BookId,
+        MemberId: req.user.id,
+        status: "borrow",
+      });
+      res.status(200).json(addBook);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = BorrowBooksController;

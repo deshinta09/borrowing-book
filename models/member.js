@@ -14,15 +14,7 @@ module.exports = (sequelize, DataTypes) => {
   }
   Member.init(
     {
-      code: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: { args: true, msg: "Code must be unique" },
-        validate: {
-          notNull: { msg: "Code is require" },
-          notEmpty: { msg: "Code is require" },
-        },
-      },
+      code: DataTypes.STRING,
       name: {
         type: DataTypes.STRING,
         allowNull: false,
