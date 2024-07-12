@@ -39,6 +39,16 @@ class MembersController {
       next(error);
     }
   }
+
+  static async allExistingMembers(req, res, next) {
+    try {
+      // get member tanpa menampilkan password beserta include buku yg dipinjam
+      let members = await Member.findAll();
+      res.status(200).json(members);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = MembersController;
