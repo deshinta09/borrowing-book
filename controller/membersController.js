@@ -1,6 +1,6 @@
 const { checkPassword } = require("../helpers/bcrypt");
 const { createToken } = require("../helpers/jwt");
-const { Member } = require("../models/");
+const { Member, MembersBook } = require("../models/");
 class MembersController {
   static async login(req, res, next) {
     try {
@@ -43,7 +43,12 @@ class MembersController {
   static async allExistingMembers(req, res, next) {
     try {
       // get member tanpa menampilkan password beserta include buku yg dipinjam
-      let members = await Member.findAll();
+      let members = await Member.findAll({
+        include: {
+          model: MembersBook,
+        },
+        attributes: ["id", "name", "email"],
+      });
       res.status(200).json(members);
     } catch (error) {
       next(error);
