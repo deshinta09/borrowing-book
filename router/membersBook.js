@@ -4,7 +4,6 @@ const authorization = require("../middleware/authorization");
 const route = express.Router();
 
 route.get("/membersBooks", BorrowBooksController.getAllBorrowedBooks);
-route.get("/memberBooks", BorrowBooksController.getMyBooks);
 route.post(
   "/membersBooks/:BookId",
   authorization,

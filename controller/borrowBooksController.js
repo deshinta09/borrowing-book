@@ -1,19 +1,5 @@
 const { MembersBook, Books } = require("../models/");
 class BorrowBooksController {
-  static async getMyBooks(req, res, next) {
-    try {
-      let books = await MembersBook.findAll({
-        where: { MemberId: req.user.id },
-        include: {
-          model: Books,
-        },
-      });
-      res.status(200).json(books);
-    } catch (error) {
-      next(error);
-    }
-  }
-
   static async getAllBorrowedBooks(req, res, next) {
     try {
       let books = await MembersBook.findAll({
@@ -95,7 +81,7 @@ class BorrowBooksController {
       if (!membersBook) {
         throw {
           name: "Not Found",
-          message: `Book with id ${BookId} not found`,
+          message: "The returned book is a book that the member has borrowed",
         };
       }
       // check waktu peminjaman apakah lebih dari 7 hari

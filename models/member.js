@@ -48,8 +48,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
   Member.beforeCreate((member) => {
-    const hashedPassword = hashedPassword(member.password);
-    member.password = hashedPassword;
+    member.password = hashedPassword(member.password);
   });
   return Member;
 };

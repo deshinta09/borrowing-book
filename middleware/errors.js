@@ -11,6 +11,18 @@ module.exports = function errors(error, req, res, next) {
   } else if (error.name === "Forbidden") {
     status = 403;
     message = error.message;
+  } else if (
+    error.name === "SequelizeUniqueConstraintError" ||
+    error.name === "SequelizeValidationError"
+  ) {
+    status = 400;
+    message = error.errors[0].message;
+  } else if (error.name === "Unautorized") {
+    status = 401;
+    message = error.message;
+  } else if (error.name === "JsonWebTokenError") {
+    status = 401;
+    message = "Invalid Token";
   }
   res.status(status).json({ message });
 };
