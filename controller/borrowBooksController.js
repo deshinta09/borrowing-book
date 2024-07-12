@@ -1,12 +1,24 @@
 const { MembersBook, Books } = require("../models/");
 class BorrowBooksController {
-  static async getBorrowBooks(req, res, next) {
+  static async getMyBooks(req, res, next) {
     try {
       let books = await MembersBook.findAll({
         where: { MemberId: req.user.id },
         include: {
           model: Books,
         },
+      });
+      res.status(200).json(books);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getAllBorrowedBooks(req, res, next) {
+    try {
+      let books = await MembersBook.findAll({
+        where: { status: "borrowed" },
+        include: { model: Books },
       });
       res.status(200).json(books);
     } catch (error) {
@@ -22,6 +34,12 @@ class BorrowBooksController {
         throw {
           name: "Not Found",
           message: `Book with id ${BookId} not found`,
+        };
+      }
+      if (book.stock < 1) {
+        throw {
+          name: "Forbidden",
+          message: "Book has been borrowed",
         };
       }
 
@@ -46,7 +64,9 @@ class BorrowBooksController {
           MemberId: req.user.id,
           status: "borrowed",
         });
-        res.status(200).json(`Successfully borrowed a book ${book.title}`);
+        res
+          .status(200)
+          .json({ message: `Successfully borrowed a book ${book.title}` });
       } else {
         res.status(500).json({ message: "Internal Server Error" });
       }
@@ -60,25 +80,33 @@ class BorrowBooksController {
       let { BookId } = req.params;
       // find buku yang akan di kembalikan
       let book = await Books.findByPk(BookId);
+      // chek apakah buku yg dipinjam terdpt di database
+      if (!book) {
+        throw {
+          name: "Not Found",
+          message: `Book with id ${BookId} not found`,
+        };
+      }
       // find buku yg dipinjam
       let membersBook = await MembersBook.findOne({
         where: { MemberId: req.user.id, BookId },
       });
       // check apakan buku yang ada dan yg dipinjam terdapat didatabase
-      if (!book || !membersBook) {
+      if (!membersBook) {
         throw {
           name: "Not Found",
           message: `Book with id ${BookId} not found`,
         };
       }
       // check waktu peminjaman apakah lebih dari 7 hari
-      let dateBorrowed = new Date(membersBook.createdAt.split(" ")[0]);
+      let dateBorrowed = new Date(membersBook.createdAt);
       dateBorrowed = dateBorrowed.getDate();
       let dateNow = new Date();
       dateNow = dateNow.getDate();
+      // console.log({ dateBorrowed, dateNow });
       // mengupdate jumlah buku
       let returnBook = await Books.update(
-        { stock: book + 1 },
+        { stock: book.stock + 1 },
         { where: { id: BookId } }
       );
 
@@ -89,7 +117,7 @@ class BorrowBooksController {
           { status },
           { where: { BookId, MemberId: req.user.id } }
         );
-        res.status(200).json(`${book.title} in status ${status}!`);
+        res.status(200).json({ message: `${book.title} in status ${status}!` });
       } else {
         res.status(500).json({ message: "Internal Server Error" });
       }
