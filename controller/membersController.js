@@ -42,6 +42,7 @@ class MembersController {
 
   static async allExistingMembers(req, res, next) {
     try {
+      let result = [];
       // get member tanpa menampilkan password beserta include buku yg dipinjam
       let members = await Member.findAll({
         include: {
@@ -49,7 +50,16 @@ class MembersController {
         },
         attributes: ["id", "name", "email"],
       });
-      res.status(200).json(members);
+      // merubah data dgn menampilkan jumlah buku yang dibaca masing masin user
+      members.forEach((el) => {
+        result.push({
+          id: el.id,
+          name: el.name,
+          email: el.email,
+          amount: el.MembersBooks.length,
+        });
+      });
+      res.status(200).json(result);
     } catch (error) {
       next(error);
     }
