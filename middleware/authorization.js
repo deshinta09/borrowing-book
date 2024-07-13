@@ -2,8 +2,12 @@ const { Member, MembersBook } = require("../models/");
 module.exports = async function authorization(req, res, next) {
   try {
     // check jumlah hari setelah pengembalian buku pinalti
+    let { MemberId } = req.body;
+    // let checkStatus = await MembersBook.findOne({
+    //   where: { MemberId: req.user.id, status: "penalized" },
+    // });
     let checkStatus = await MembersBook.findOne({
-      where: { MemberId: req.user.id, status: "penalized" },
+      where: { MemberId, status: "penalized" },
     });
     // hari ini dikurangi hari waktu status berubah apakah lebih dari 3 hari
     if (
@@ -17,8 +21,11 @@ module.exports = async function authorization(req, res, next) {
       );
     }
     // check lagi apakah masih ada yang terkena pinalti
+    // let checkPinalty = await MembersBook.findAll({
+    //   where: { MemberId: req.user.id, status: "penalized" },
+    // });
     let checkPinalty = await MembersBook.findAll({
-      where: { MemberId: req.user.id, status: "penalized" },
+      where: { MemberId, status: "penalized" },
     });
 
     if (!checkPinalty.length) {

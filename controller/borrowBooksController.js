@@ -14,6 +14,7 @@ class BorrowBooksController {
 
   static async postBorrowBooks(req, res, next) {
     try {
+      let { MemberId } = req.body;
       let { BookId } = req.params;
       let book = await Books.findByPk(BookId);
       if (!book) {
@@ -29,9 +30,13 @@ class BorrowBooksController {
         };
       }
 
+      // let check = await MembersBook.findAll({
+      //   where: { MemberId: req.user.id, status: "borrowed" },
+      // });
       let check = await MembersBook.findAll({
-        where: { MemberId: req.user.id, status: "borrowed" },
+        where: { MemberId, status: "borrowed" },
       });
+
       if (check.length === 2) {
         throw {
           name: "Forbidden",
@@ -47,9 +52,14 @@ class BorrowBooksController {
       if (updateBooks[0] === 1) {
         await MembersBook.create({
           BookId,
-          MemberId: req.user.id,
+          MemberId,
           status: "borrowed",
         });
+        // await MembersBook.create({
+        //   BookId,
+        //   MemberId: req.user.id,
+        //   status: "borrowed",
+        // });
         res
           .status(200)
           .json({ message: `Successfully borrowed a book ${book.title}` });
@@ -63,6 +73,7 @@ class BorrowBooksController {
 
   static async returnBook(req, res, next) {
     try {
+      let { MemberId } = req.body;
       let { BookId } = req.params;
       // find buku yang akan di kembalikan
       let book = await Books.findByPk(BookId);
@@ -74,8 +85,11 @@ class BorrowBooksController {
         };
       }
       // find buku yg dipinjam
+      // let membersBook = await MembersBook.findOne({
+      //   where: { MemberId: req.user.id, BookId },
+      // });
       let membersBook = await MembersBook.findOne({
-        where: { MemberId: req.user.id, BookId },
+        where: { MemberId, BookId },
       });
       // check apakan buku yang ada dan yg dipinjam terdapat didatabase
       if (!membersBook) {
@@ -99,10 +113,11 @@ class BorrowBooksController {
       if (returnBook[0] === 1) {
         // status disesuaikan dengan aturan pinalti
         let status = dateNow - dateBorrowed > 7 ? "penalized" : "returned";
-        await MembersBook.update(
-          { status },
-          { where: { BookId, MemberId: req.user.id } }
-        );
+        // await MembersBook.update(
+        //   { status },
+        //   { where: { BookId, MemberId: req.user.id } }
+        // );
+        await MembersBook.update({ status }, { where: { BookId, MemberId } });
         res.status(200).json({ message: `${book.title} in status ${status}!` });
       } else {
         res.status(500).json({ message: "Internal Server Error" });
