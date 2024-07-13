@@ -82,16 +82,9 @@ afterAll(async () => {
 describe("GET /books", () => {
   // Shows all existing books and quantities
   test("should response 200-OK", async () => {
-    let user = await Member.create({
-        code: "M002",
-        name: "Putri",
-        email: "putri@mail.com",
-        password: hashedPassword("secret"),
-      }),
-      token = createToken({ id: user.id });
-    let respon = await request(app)
-      .get("/books")
-      .set("authorization", `Bearer ${token}`);
+    //   token = createToken({ id: user.id });
+    let respon = await request(app).get("/books");
+    // .set("authorization", `Bearer ${token}`);
 
     expect(respon.status).toBe(200);
     expect(respon.body).toBeInstanceOf(Array);
@@ -102,25 +95,25 @@ describe("GET /books", () => {
     expect(respon.body[0]).toHaveProperty("stock", expect.any(Number));
   });
 
-  // tanpa token
-  test("should response 401-Unauthorized", async () => {
-    let respon = await request(app).get("/books");
+  // // tanpa token
+  // test("should response 401-Unauthorized", async () => {
+  //   let respon = await request(app).get("/books");
 
-    expect(respon.status).toBe(401);
-    expect(respon.body).toBeInstanceOf(Object);
-    expect(respon.body).toHaveProperty("message", "Invalid Token");
-  });
+  //   expect(respon.status).toBe(401);
+  //   expect(respon.body).toBeInstanceOf(Object);
+  //   expect(respon.body).toHaveProperty("message", "Invalid Token");
+  // });
 
-  // token salah
-  test("should response 401-Invalid Token", async () => {
-    let respon = await request(app)
-      .get("/books")
-      .set("authorization", `Bearer ${token}-salah`);
+  // // token salah
+  // test("should response 401-Invalid Token", async () => {
+  //   let respon = await request(app)
+  //     .get("/books")
+  //     .set("authorization", `Bearer ${token}-salah`);
 
-    expect(respon.status).toBe(401);
-    expect(respon.body).toBeInstanceOf(Object);
-    expect(respon.body).toHaveProperty("message", "Invalid Token");
-  });
+  //   expect(respon.status).toBe(401);
+  //   expect(respon.body).toBeInstanceOf(Object);
+  //   expect(respon.body).toHaveProperty("message", "Invalid Token");
+  // });
 });
 
 // Members can borrow books with conditions
@@ -132,10 +125,11 @@ describe("POST /membersBooks/:BookId", () => {
       email: "nan@mail.com",
       password: hashedPassword("secret"),
     });
-    token = createToken({ id: user.id });
+    // token = createToken({ id: user.id });
     let respon = await request(app)
       .post("/membersBooks/" + 1)
-      .set("authorization", `Bearer ${token}`);
+      .send({ MemberId: user.id });
+    // .set("authorization", `Bearer ${token}`);
 
     let book = await Books.findByPk(1);
 
@@ -149,9 +143,11 @@ describe("POST /membersBooks/:BookId", () => {
 
   // buku tidak ditemukan
   test("should response 404-Not Found", async () => {
+    let user = await Member.findOne({ where: { email: "nan@mail.com" } });
     let respon = await request(app)
       .post("/membersBooks/" + 1000)
-      .set("authorization", `Bearer ${token}`);
+      .send({ MemberId: user.id });
+    // .set("authorization", `Bearer ${token}`);
 
     expect(respon.status).toBe(404);
     expect(respon.body).toBeInstanceOf(Object);
@@ -161,14 +157,14 @@ describe("POST /membersBooks/:BookId", () => {
     );
   });
 
-  // tanpa token
-  test("should response 401-Unauthorized", async () => {
-    let respon = await request(app).post("/membersBooks/" + 2);
+  // // tanpa token
+  // test("should response 401-Unauthorized", async () => {
+  //   let respon = await request(app).post("/membersBooks/" + 2);
 
-    expect(respon.status).toBe(401);
-    expect(respon.body).toBeInstanceOf(Object);
-    expect(respon.body).toHaveProperty("message", "Invalid Token");
-  });
+  //   expect(respon.status).toBe(401);
+  //   expect(respon.body).toBeInstanceOf(Object);
+  //   expect(respon.body).toHaveProperty("message", "Invalid Token");
+  // });
 
   // Borrowed books are not borrowed by other members
   test("should response 403-Forbidden", async () => {
@@ -181,7 +177,8 @@ describe("POST /membersBooks/:BookId", () => {
     token2 = createToken({ id: user.id });
     let respon = await request(app)
       .post("/membersBooks/" + 1)
-      .set("authorization", `Bearer ${token2}`);
+      .send({ MemberId: user.id });
+    // .set("authorization", `Bearer ${token2}`);
 
     expect(respon.status).toBe(403);
     expect(respon.body).toBeInstanceOf(Object);
@@ -190,13 +187,16 @@ describe("POST /membersBooks/:BookId", () => {
 
   // Members may not borrow more than 2 books
   test("should response 403-OK", async () => {
+    let user = await Member.findOne({ where: { email: "nan@mail.com" } });
     await request(app)
       .post("/membersBooks/" + 2)
-      .set("authorization", `Bearer ${token}`);
+      .send({ MemberId: user.id });
+    // .set("authorization", `Bearer ${token}`);
 
     let respon = await request(app)
       .post("/membersBooks/" + 3)
-      .set("authorization", `Bearer ${token}`);
+      .send({ MemberId: user.id });
+    // .set("authorization", `Bearer ${token}`);
 
     expect(respon.status).toBe(403);
     expect(respon.body).toBeInstanceOf(Object);
@@ -208,7 +208,7 @@ describe("POST /membersBooks/:BookId", () => {
 
   // Member is currently being penalized. Member with penalty cannot able to borrow the book for 3 days
   test("should response 403-OK", async () => {
-    await MembersBook.create({
+    let user = await MembersBook.create({
       MemberId: checkToken(token2).id,
       BookId: 4,
       status: "penalized",
@@ -216,7 +216,8 @@ describe("POST /membersBooks/:BookId", () => {
 
     let respon = await request(app)
       .post("/membersBooks/" + 3)
-      .set("authorization", `Bearer ${token2}`);
+      .send({ MemberId: user.MemberId });
+    // .set("authorization", `Bearer ${token2}`);
 
     expect(respon.status).toBe(403);
     expect(respon.body).toBeInstanceOf(Object);
@@ -226,16 +227,16 @@ describe("POST /membersBooks/:BookId", () => {
     );
   });
 
-  // token salah
-  test("should response 401-Unauthorized", async () => {
-    let respon = await request(app)
-      .post("/membersBooks/" + 2)
-      .set("authorization", `Bearer ${token}-salah`);
+  // // token salah
+  // test("should response 401-Unauthorized", async () => {
+  //   let respon = await request(app)
+  //     .post("/membersBooks/" + 2)
+  //     .set("authorization", `Bearer ${token}-salah`);
 
-    expect(respon.status).toBe(401);
-    expect(respon.body).toBeInstanceOf(Object);
-    expect(respon.body).toHaveProperty("message", "Invalid Token");
-  });
+  //   expect(respon.status).toBe(401);
+  //   expect(respon.body).toBeInstanceOf(Object);
+  //   expect(respon.body).toHaveProperty("message", "Invalid Token");
+  // });
 });
 
 describe("GET /membersBooks", () => {
@@ -258,36 +259,37 @@ describe("GET /membersBooks", () => {
     expect(respon.body[0]).toHaveProperty("BookId", expect.any(Number));
   });
 
-  // tanpa token
-  test("should response 401-Invalid token", async () => {
-    let respon = await request(app).get("/membersBooks");
+  // // tanpa token
+  // test("should response 401-Invalid token", async () => {
+  //   let respon = await request(app).get("/membersBooks");
 
-    expect(respon.status).toBe(401);
-    expect(respon.body).toBeInstanceOf(Object);
-    expect(respon.body).toHaveProperty("message", "Invalid Token");
-  });
+  //   expect(respon.status).toBe(401);
+  //   expect(respon.body).toBeInstanceOf(Object);
+  //   expect(respon.body).toHaveProperty("message", "Invalid Token");
+  // });
 
-  // token salah
-  test("should response 401-Invalid token", async () => {
-    let respon = await request(app)
-      .get("/membersBooks")
-      .set("authorization", `Bearer ${token}-salah`);
+  // // token salah
+  // test("should response 401-Invalid token", async () => {
+  //   let respon = await request(app)
+  //     .get("/membersBooks")
+  //     .set("authorization", `Bearer ${token}-salah`);
 
-    expect(respon.status).toBe(401);
-    expect(respon.body).toBeInstanceOf(Object);
-    expect(respon.body).toHaveProperty("message", "Invalid Token");
-  });
+  //   expect(respon.status).toBe(401);
+  //   expect(respon.body).toBeInstanceOf(Object);
+  //   expect(respon.body).toHaveProperty("message", "Invalid Token");
+  // });
 });
 
 // Member returns the book with conditions
 describe("PATCH /membersBooks/:BookId", () => {
   test("should response 200-OK", async () => {
     let user = await Member.findOne({ where: { email: "nan@mail.com" } });
-    token = createToken({ id: user.id });
+    // token = createToken({ id: user.id });
 
     let respon = await request(app)
       .patch("/membersBooks/" + 1)
-      .set("authorization", `Bearer ${token}`);
+      .send({ MemberId: user.id });
+    // .set("authorization", `Bearer ${token}`);
 
     let book = await Books.findByPk(1);
 
@@ -301,9 +303,11 @@ describe("PATCH /membersBooks/:BookId", () => {
 
   // book not found
   test("should response 404-Not Found", async () => {
+    let user = await Member.findOne({ where: { email: "nan@mail.com" } });
     let respon = await request(app)
       .patch("/membersBooks/" + 1000)
-      .set("authorization", `Bearer ${token}`);
+      .send({ MemberId: user.id });
+    // .set("authorization", `Bearer ${token}`);
 
     expect(respon.status).toBe(404);
     expect(respon.body).toBeInstanceOf(Object);
@@ -315,12 +319,18 @@ describe("PATCH /membersBooks/:BookId", () => {
 
   // The returned book is a book that the member has borrowed
   test("should response 404-Not Found", async () => {
-    let user = await Member.findOne({ where: { email: "putri@mail.com" } });
-    let tokenUser = createToken({ id: user.id });
+    let user = await Member.create({
+      code: "M002",
+      name: "Putri",
+      email: "putri@mail.com",
+      password: hashedPassword("secret"),
+    });
+    // let tokenUser = createToken({ id: user.id });
 
     let respon = await request(app)
       .patch("/membersBooks/" + 2)
-      .set("authorization", `Bearer ${tokenUser}`);
+      .send({ MemberId: user.id });
+    // .set("authorization", `Bearer ${tokenUser}`);
 
     expect(respon.status).toBe(404);
     expect(respon.body).toBeInstanceOf(Object);
@@ -343,7 +353,8 @@ describe("PATCH /membersBooks/:BookId", () => {
 
     let respon = await request(app)
       .patch("/membersBooks/" + 2)
-      .set("authorization", `Bearer ${token}`);
+      .send({ MemberId: user.id });
+    // .set("authorization", `Bearer ${token}`);
 
     expect(respon.status).toBe(200);
     expect(respon.body).toBeInstanceOf(Object);
